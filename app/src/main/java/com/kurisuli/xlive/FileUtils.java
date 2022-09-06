@@ -3,6 +3,7 @@ package com.kurisuli.xlive;
 import android.os.Environment;
 import android.util.Log;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -14,7 +15,12 @@ public class FileUtils {
         FileOutputStream writer = null;
 
         try {
-            writer = new FileOutputStream(Environment.getExternalStorageDirectory() + "/codec.h264", true);
+            File file = new File(Environment.getExternalStorageDirectory() + "/codec.h264");
+            if (file.exists()) {
+                file.delete();
+            }
+            file.createNewFile();
+            writer = new FileOutputStream(file, true);
             writer.write(array);
             writer.write('\n');
         } catch (IOException e) {
@@ -42,7 +48,12 @@ public class FileUtils {
         Log.i(TAG, "writeContent: " + sb.toString());
         FileWriter writer = null;
         try {
-            writer = new FileWriter(Environment.getExternalStorageDirectory() + "/codecH264.txt", true);
+            File file = new File(Environment.getExternalStorageDirectory() + "/codecH264.txt");
+            if (file.exists()) {
+                file.delete();
+            }
+            file.createNewFile();
+            writer = new FileWriter(file, true);
             writer.write(sb.toString());
             writer.write("\n");
         } catch (IOException e) {

@@ -12,24 +12,16 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.Parcelable;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 
 import java.util.Objects;
 
 public class ScreenRecordService extends Service {
     private int mResultCode;
     private Intent mResultData;
-
-    private MediaProjection mediaProjection;
-    private MediaProjectionManager mediaProjectionManager;
-
-    private String NOTIFICATION_CHANNEL_ID = "ScreenRecordService_nofity";
-    private String NOTIFICATION_CHANNEL_NAME = "ScreenRecordService";
-    private String NOTIFICATION_CHANNEL_DESC = "ScreenRecordService";
-    private int NOTIFICATION_ID = 1000;
+    private MediaProjectionManager projectionManager;
+    private MediaProjection mMediaProjection;
 
     @Nullable
     @Override
@@ -43,38 +35,41 @@ public class ScreenRecordService extends Service {
         mResultCode = intent.getIntExtra("code", -1);
         mResultData = intent.getParcelableExtra("data");
 
-        mediaProjectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-        mediaProjection = mediaProjectionManager.getMediaProjection(mResultCode, mResultData);
+        this.projectionManager = (MediaProjectionManager)getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+        mMediaProjection = projectionManager.getMediaProjection(mResultCode, Objects.requireNonNull(mResultData));
 
-        VideoCodec videoCodec = new VideoCodec();
-        videoCodec.startLive(mediaProjection);
-
+        MediaProjectionUtils.getInstance().startLive(mMediaProjection);
         return super.onStartCommand(intent, flags, startId);
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            //Call Start foreground with notification
-            Intent notificationIntent = new Intent(this, ScreenRecordService.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                    .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_foreground))
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)
-                    .setContentTitle("Starting Service")
-                    .setContentText("Starting monitoring service")
-                    .setContentIntent(pendingIntent);
-            Notification notification = notificationBuilder.build();
-            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription(NOTIFICATION_CHANNEL_DESC);
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.createNotificationChannel(channel);
-            startForeground(NOTIFICATION_ID, notification);
+        Notification.Builder builder = new Notification.Builder(this.getApplicationContext());
+        Intent nfIntent = new Intent(this, MainActivity.class);
+
+        builder.setContentIntent(PendingIntent.getActivity(this, 0, nfIntent, 0))
+                .setLargeIcon(BitmapFactory.decodeResource(this.getResources(), R.mipmap.ic_launcher))
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentText("is running......")
+                .setWhen(System.currentTimeMillis());
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setChannelId("notification_id");
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+            NotificationChannel channel = new NotificationChannel("notification_id", "notification_name", NotificationManager.IMPORTANCE_LOW);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        Notification notification = builder.build();
+        notification.defaults = Notification.DEFAULT_SOUND;
+        startForeground(110, notification);
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         stopForeground(true);
+        super.onDestroy();
     }
 }

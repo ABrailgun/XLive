@@ -6,14 +6,12 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
-import android.provider.MediaStore;
 import android.view.Surface;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class VideoCodec extends Thread {
+public class MediaProjectionUtils extends Thread {
 
     private MediaProjection mediaProjection;
 
@@ -23,8 +21,22 @@ public class VideoCodec extends Thread {
 
     private boolean isLiving = false;
 
+    private static MediaProjectionUtils instance;
+
+    private MediaProjectionUtils() {}
+
+    public static MediaProjectionUtils getInstance() {
+      if (instance == null) {
+        instance = new MediaProjectionUtils();
+      }
+      return instance;
+    }
+
     public void startLive(MediaProjection mediaProjection) {
         this.mediaProjection = mediaProjection;
+        if (mediaProjection == null) {
+            return;
+        }
         MediaFormat format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, 720, 1280);
 
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
